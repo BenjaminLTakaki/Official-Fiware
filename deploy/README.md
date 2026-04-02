@@ -130,11 +130,18 @@ default loopback alias — different from `127.0.0.1`).
 
 | Component | Chart | Version |
 |---|---|---|
-| Trust Anchor | dsc/data-space-connector | 0.2.0 |
-| Consumer | dsc/data-space-connector | 7.17.0 |
-| Provider | dsc/data-space-connector | 7.17.0 |
+| Trust Anchor | dsc/data-space-connector | 7.37.4 |
+| Consumer | dsc/data-space-connector | 7.37.4 |
+| Provider | dsc/data-space-connector | 7.37.4 |
+
+**Note:** The original scripts referenced version 0.2.0 for Trust Anchor and 7.17.0 for Consumer/Provider, but these versions are no longer available in the repository. The minimum available version is 7.0.0. Use version 7.37.4 or later for compatibility with the updated values files.
 
 Chart repo: `https://fiware.github.io/data-space-connector/`
+
+To check available versions:
+```bash
+helm search repo dsc/data-space-connector --versions
+```
 
 ---
 

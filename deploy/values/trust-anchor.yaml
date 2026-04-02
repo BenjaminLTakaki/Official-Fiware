@@ -1,6 +1,6 @@
 # =============================================================================
 # trust-anchor.yaml — Helm values for the FIWARE Trust Anchor
-# Chart: dsc/data-space-connector  Version: 7.0.0
+# Chart: dsc/data-space-connector  Version: 7.37.4
 # Namespace: trust-anchor
 #
 # The Trust Anchor hosts the Trusted Issuers List (TIL) — the global registry
@@ -17,7 +17,7 @@ keycloak:
 apisix:
   enabled: false
 
-scorpio-broker-aaio:
+scorpio:
   enabled: false
 
 tm-forum-api:
@@ -32,11 +32,15 @@ vcwaltid:
 postgresql:
   enabled: false
 
+postgis:
+  enabled: false
+
 # ---------------------------------------------------------------------------
 # MySQL — backend store for the Trusted Issuers List
 # ---------------------------------------------------------------------------
 mysql:
   enabled: true
+  fullnameOverride: trust-anchor-mysql
   auth:
     rootPassword: "trust-anchor-root-pass"
     database: til
@@ -53,6 +57,7 @@ mysql:
 # ---------------------------------------------------------------------------
 trusted-issuers-list:
   enabled: true
+  fullnameOverride: trust-anchor-til
   ingress:
     enabled: true
     className: nginx
@@ -71,6 +76,7 @@ trusted-issuers-list:
 # ---------------------------------------------------------------------------
 credentials-config-service:
   enabled: true
+  fullnameOverride: trust-anchor-ccs
   ingress:
     enabled: true
     className: nginx
