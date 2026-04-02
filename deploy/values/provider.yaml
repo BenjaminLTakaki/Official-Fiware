@@ -1,6 +1,6 @@
 # =============================================================================
 # provider.yaml — Helm values for the FIWARE Data Space Provider
-# Chart: dsc/data-space-connector  Version: 7.0.0
+# Chart: dsc/data-space-connector  Version: 7.37.4
 # Namespace: provider
 #
 # The Provider serves NGSI-LD data (via Scorpio) and enforces access control
@@ -40,9 +40,7 @@ mysql:
 # ---------------------------------------------------------------------------
 # PostgreSQL for Scorpio (NGSI-LD context broker)
 # ---------------------------------------------------------------------------
-scorpio-db:
-  # Note: this might be named 'postgresql-scorpio' or similar in the chart
-  # Check with: helm show values dsc/data-space-connector --version 7.17.0
+postgis:
   enabled: true
   auth:
     username: scorpio
@@ -129,13 +127,13 @@ credentials-config-service:
 # ---------------------------------------------------------------------------
 # Scorpio — NGSI-LD context broker (the actual data store)
 # ---------------------------------------------------------------------------
-scorpio-broker-aaio:
+scorpio:
   enabled: true
   # Scorpio is only accessible via APISIX, not directly exposed
   ingress:
     enabled: false
   db:
-    dbhost: provider-scorpio-db
+    dbhost: provider-postgis
     user: scorpio
     password: "scorpio-pass"
     db: scorpio
@@ -143,9 +141,12 @@ scorpio-broker-aaio:
   ccs:
     endpoint: http://credentials-config-service:8080
     configMap: scorpio-registration
-    id: data-service
+    id: tmf-api
     defaultOidcScope:
       name: default
+      credentialType: VerifiableCredential
+      trustedParticipantsLists: http://til.127.0.1.1.nip.io
+      trustedIssuersLists: http://til-provider:8080
 
 # ---------------------------------------------------------------------------
 # APISIX — API Gateway (Policy Enforcement Point, PEP)
@@ -165,7 +166,7 @@ apisix:
     verifier:
       url: "http://provider-vcwaltid:7001/services/OperatorCredential"
     upstream:
-      host: "provider-scorpio-broker-aaio"
+      host: "data-service-scorpio"
       port: 9090
 
 # ---------------------------------------------------------------------------
@@ -197,7 +198,7 @@ odrl-pap:
 # ---------------------------------------------------------------------------
 tm-forum-api:
   enabled: true
-  ngsiLdUrl: "http://provider-scorpio-broker-aaio:9090"
+  ngsiLdUrl: "http://data-service-scorpio:9090"
   ingress:
     enabled: true
     className: nginx

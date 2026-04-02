@@ -1,6 +1,6 @@
 # =============================================================================
 # consumer.yaml — Helm values for the FIWARE Data Space Consumer
-# Chart: dsc/data-space-connector  Version: 7.0.0
+# Chart: dsc/data-space-connector  Version: 7.37.4
 # Namespace: consumer
 #
 # The Consumer issues Verifiable Credentials to users via Keycloak (OID4VC).
@@ -16,15 +16,8 @@
 apisix:
   enabled: false
 
-scorpio-broker-aaio:
+scorpio:
   enabled: false
-  # Required by chart template even if disabled
-  ccs:
-    endpoint: http://credentials-config-service:8080
-    configMap: scorpio-registration
-    id: data-service
-    defaultOidcScope:
-      name: default
 
 tm-forum-api:
   enabled: false
@@ -32,7 +25,6 @@ tm-forum-api:
 odrl-pap:
   enabled: false
 
-# MySQL disabled (TIL uses PostgreSQL on provider; consumer TIL uses its own)
 mysql:
   enabled: false
 
@@ -68,7 +60,7 @@ keycloak:
     enabled: false  # Use the external postgresql subchart above
 
   externalDatabase:
-    host: consumer-postgresql
+    host: consumer-keycloak-postgresql
     port: 5432
     database: keycloak
     user: keycloak

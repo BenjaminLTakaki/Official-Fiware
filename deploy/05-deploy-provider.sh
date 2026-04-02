@@ -28,7 +28,7 @@ echo ""
 echo "Installing provider chart (takes ~5 min — Scorpio is heavy)..."
 helm upgrade --install provider dsc/data-space-connector \
   --namespace provider \
-  --version 7.0.0 \
+  --version 7.37.4 \
   --values "$SCRIPT_DIR/values/provider.yaml" \
   --set "vcwaltid.app.vcVerifier.did=$PROVIDER_DID" \
   --timeout 20m \

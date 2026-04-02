@@ -36,7 +36,7 @@ echo ""
 echo "[2/3] Installing consumer chart (this takes ~3 min for Keycloak to start)..."
 helm upgrade --install consumer dsc/data-space-connector \
   --namespace consumer \
-  --version 7.0.0 \
+  --version 7.37.4 \
   --values "$SCRIPT_DIR/values/consumer.yaml" \
   --set "vcwaltid.app.vcVerifier.did=$CONSUMER_DID" \
   --timeout 15m \
