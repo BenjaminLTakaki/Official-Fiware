@@ -1,6 +1,6 @@
 # =============================================================================
 # provider.yaml — Helm values for the FIWARE Data Space Provider
-# Chart: dsc/data-space-connector  Version: 7.17.0
+# Chart: dsc/data-space-connector  Version: 7.0.0
 # Namespace: provider
 #
 # The Provider serves NGSI-LD data (via Scorpio) and enforces access control
@@ -139,6 +139,13 @@ scorpio-broker-aaio:
     user: scorpio
     password: "scorpio-pass"
     db: scorpio
+  # Register dataplane at CCS
+  ccs:
+    endpoint: http://credentials-config-service:8080
+    configMap: scorpio-registration
+    id: data-service
+    defaultOidcScope:
+      name: default
 
 # ---------------------------------------------------------------------------
 # APISIX — API Gateway (Policy Enforcement Point, PEP)

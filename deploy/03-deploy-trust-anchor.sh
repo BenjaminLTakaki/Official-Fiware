@@ -16,10 +16,10 @@ echo "========================================"
 # Ensure namespace exists
 kubectl create namespace trust-anchor --dry-run=client -o yaml | kubectl apply -f -
 
-# Deploy the trust anchor chart (version 0.2.0 — the lightweight TIL-only chart)
+# Deploy the trust anchor chart (version 7.0.0)
 helm upgrade --install trust-anchor dsc/data-space-connector \
   --namespace trust-anchor \
-  --version 0.2.0 \
+  --version 7.0.0 \
   --values "$SCRIPT_DIR/values/trust-anchor.yaml" \
   --timeout 10m \
   --wait

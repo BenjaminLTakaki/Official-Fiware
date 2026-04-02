@@ -16,7 +16,10 @@ sudo apt-get update -y
 sudo apt-get install -y curl wget git openssl python3 python3-pip jq
 
 # Install Python cryptography library (needed by did_helper.py)
-pip3 install cryptography --quiet
+# Handle PEP 668 externally-managed-environment on newer Python versions
+pip3 install cryptography --quiet --break-system-packages || \
+  pip3 install cryptography --quiet --user || \
+  python3 -m pip install cryptography --quiet --break-system-packages
 
 # --- Install k3s (lightweight Kubernetes) ---
 echo "[2/5] Installing k3s..."

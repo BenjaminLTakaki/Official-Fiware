@@ -1,6 +1,6 @@
 # =============================================================================
 # consumer.yaml — Helm values for the FIWARE Data Space Consumer
-# Chart: dsc/data-space-connector  Version: 7.17.0
+# Chart: dsc/data-space-connector  Version: 7.0.0
 # Namespace: consumer
 #
 # The Consumer issues Verifiable Credentials to users via Keycloak (OID4VC).
@@ -18,6 +18,13 @@ apisix:
 
 scorpio-broker-aaio:
   enabled: false
+  # Required by chart template even if disabled
+  ccs:
+    endpoint: http://credentials-config-service:8080
+    configMap: scorpio-registration
+    id: data-service
+    defaultOidcScope:
+      name: default
 
 tm-forum-api:
   enabled: false

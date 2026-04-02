@@ -1,6 +1,6 @@
 # =============================================================================
 # trust-anchor.yaml — Helm values for the FIWARE Trust Anchor
-# Chart: dsc/data-space-connector  Version: 0.2.0
+# Chart: dsc/data-space-connector  Version: 7.0.0
 # Namespace: trust-anchor
 #
 # The Trust Anchor hosts the Trusted Issuers List (TIL) — the global registry
