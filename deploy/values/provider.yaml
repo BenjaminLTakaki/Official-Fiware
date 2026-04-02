@@ -1,0 +1,201 @@
+# =============================================================================
+# provider.yaml — Helm values for the FIWARE Data Space Provider
+# Chart: dsc/data-space-connector  Version: 7.17.0
+# Namespace: provider
+#
+# The Provider serves NGSI-LD data (via Scorpio) and enforces access control
+# via APISIX (PEP) + OPA (PDP) + ODRL PAP.
+# Components: VCVerifier + TIL (MySQL) + CCS + APISIX + OPA + Scorpio + ODRL PAP + TM Forum APIs
+# NO Keycloak on the provider.
+#
+# IMPORTANT: Replace PROVIDER_DID and CONSUMER_DID with actual values from
+#            02-generate-identities.sh before deploying.
+# =============================================================================
+
+# ---------------------------------------------------------------------------
+# Disable Keycloak — provider does not issue credentials
+# ---------------------------------------------------------------------------
+keycloak:
+  enabled: false
+
+postgresql:
+  enabled: false  # Each subchart that needs it will have its own
+
+# ---------------------------------------------------------------------------
+# MySQL — shared backend for TIL and CCS
+# ---------------------------------------------------------------------------
+mysql:
+  enabled: true
+  auth:
+    rootPassword: "provider-mysql-root"
+    database: til
+    username: til
+    password: "til-pass"
+  primary:
+    persistence:
+      enabled: true
+      storageClass: local-path
+      size: 1Gi
+
+# ---------------------------------------------------------------------------
+# PostgreSQL for Scorpio (NGSI-LD context broker)
+# ---------------------------------------------------------------------------
+scorpio-db:
+  # Note: this might be named 'postgresql-scorpio' or similar in the chart
+  # Check with: helm show values dsc/data-space-connector --version 7.17.0
+  enabled: true
+  auth:
+    username: scorpio
+    password: "scorpio-pass"
+    database: scorpio
+  primary:
+    persistence:
+      enabled: true
+      storageClass: local-path
+      size: 5Gi
+
+# ---------------------------------------------------------------------------
+# PostgreSQL for ODRL PAP
+# ---------------------------------------------------------------------------
+odrl-pap-postgresql:
+  enabled: true
+  auth:
+    username: odrl
+    password: "odrl-pass"
+    database: odrl
+  primary:
+    persistence:
+      enabled: true
+      storageClass: local-path
+      size: 1Gi
+
+# ---------------------------------------------------------------------------
+# VCVerifier (WaltID) — verifies credentials presented by data consumers
+# Configured with Provider's DID (from keystore secret)
+# ---------------------------------------------------------------------------
+vcwaltid:
+  enabled: true
+  ingress:
+    enabled: true
+    className: nginx
+    hosts:
+      - host: verifier-provider.127.0.1.1.nip.io
+        paths:
+          - path: /
+            pathType: Prefix
+  app:
+    vcVerifier:
+      # Check the global TIL to confirm consumer is a valid participant
+      trustedIssuersLists:
+        - url: "http://til.127.0.1.1.nip.io/v4/issuers"
+      # Use provider's local TIL to configure allowed credential types
+      credentialConfigService:
+        url: "http://provider-credentials-config-service:8080"
+  # Mount provider's PKCS12 keystore (created in 02-generate-identities.sh)
+  existingSecret: provider-identity
+
+# ---------------------------------------------------------------------------
+# Trusted Issuers List — provider's local copy (MySQL-backed)
+# ---------------------------------------------------------------------------
+trusted-issuers-list:
+  enabled: true
+  ingress:
+    enabled: true
+    className: nginx
+    hosts:
+      - host: til-provider.127.0.1.1.nip.io
+        paths:
+          - path: /
+            pathType: Prefix
+  database:
+    url: jdbc:mysql://provider-mysql:3306/til
+    username: til
+    password: "til-pass"
+
+# ---------------------------------------------------------------------------
+# Credential Config Service — defines which VC types are accepted for access
+# ---------------------------------------------------------------------------
+credentials-config-service:
+  enabled: true
+  ingress:
+    enabled: true
+    className: nginx
+    hosts:
+      - host: ccs-provider.127.0.1.1.nip.io
+        paths:
+          - path: /
+            pathType: Prefix
+
+# ---------------------------------------------------------------------------
+# Scorpio — NGSI-LD context broker (the actual data store)
+# ---------------------------------------------------------------------------
+scorpio-broker-aaio:
+  enabled: true
+  # Scorpio is only accessible via APISIX, not directly exposed
+  ingress:
+    enabled: false
+  db:
+    dbhost: provider-scorpio-db
+    user: scorpio
+    password: "scorpio-pass"
+    db: scorpio
+
+# ---------------------------------------------------------------------------
+# APISIX — API Gateway (Policy Enforcement Point, PEP)
+# All external requests to the data endpoint go through APISIX.
+# APISIX validates the JWT token with VCVerifier before proxying to Scorpio.
+# ---------------------------------------------------------------------------
+apisix:
+  enabled: true
+  ingress:
+    enabled: true
+    className: nginx
+    hostname: provider.127.0.1.1.nip.io
+  # APISIX configuration - routes requests to Scorpio if token is valid
+  customConfig:
+    # Route: /ngsi-ld/v1/entities → Scorpio
+    # Token verification: via VCVerifier JWKS endpoint
+    verifier:
+      url: "http://provider-vcwaltid:7001/services/OperatorCredential"
+    upstream:
+      host: "provider-scorpio-broker-aaio"
+      port: 9090
+
+# ---------------------------------------------------------------------------
+# OPA (Open Policy Agent) — Policy Decision Point (PDP), runs as sidecar
+# ---------------------------------------------------------------------------
+# OPA is typically a sidecar to APISIX, configured within the apisix values.
+# The OPA policy checks ODRL rules from ODRL PAP.
+
+# ---------------------------------------------------------------------------
+# ODRL PAP — Policy Administration Point (stores access policies)
+# ---------------------------------------------------------------------------
+odrl-pap:
+  enabled: true
+  ingress:
+    enabled: true
+    className: nginx
+    hosts:
+      - host: pap-provider.127.0.1.1.nip.io
+        paths:
+          - path: /
+            pathType: Prefix
+  db:
+    url: jdbc:postgresql://provider-odrl-pap-postgresql:5432/odrl
+    username: odrl
+    password: "odrl-pass"
+
+# ---------------------------------------------------------------------------
+# TM Forum APIs — expose NGSI-LD data via TM Forum-compliant APIs
+# ---------------------------------------------------------------------------
+tm-forum-api:
+  enabled: true
+  ngsiLdUrl: "http://provider-scorpio-broker-aaio:9090"
+  ingress:
+    enabled: true
+    className: nginx
+    hosts:
+      - host: tmf-provider.127.0.1.1.nip.io
+        paths:
+          - path: /
+            pathType: Prefix

@@ -1,0 +1,27 @@
+# Multimodal RAG — local, open-source stack
+# Install with: pip install -r requirements.txt
+#
+# NOTE: ffmpeg binary is bundled automatically via imageio-ffmpeg (see below).
+# No system-level ffmpeg install is required.
+
+# Vector store
+chromadb>=0.4.22
+
+# Text embeddings
+sentence-transformers>=2.7.0
+
+# Image / multimodal embeddings (CLIP)
+open-clip-torch>=2.24.0
+
+# Ships a static ffmpeg binary + Python reader API (no system ffmpeg needed)
+imageio-ffmpeg>=0.4.9
+
+# Image handling
+Pillow>=10.3.0
+
+# Deep-learning backend (CPU or CUDA — torch will pull the right variant)
+torch>=2.1.0
+
+# Utilities
+numpy>=1.26.0
+tqdm>=4.66.0

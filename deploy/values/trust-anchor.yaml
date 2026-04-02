@@ -1,0 +1,81 @@
+# =============================================================================
+# trust-anchor.yaml — Helm values for the FIWARE Trust Anchor
+# Chart: dsc/data-space-connector  Version: 0.2.0
+# Namespace: trust-anchor
+#
+# The Trust Anchor hosts the Trusted Issuers List (TIL) — the global registry
+# that says which organisations (DIDs) are valid participants in the data space.
+# It is NOT a data participant itself. It only runs MySQL + TIL + CCS.
+# =============================================================================
+
+# ---------------------------------------------------------------------------
+# Disable everything except TIL, CCS, and MySQL
+# ---------------------------------------------------------------------------
+keycloak:
+  enabled: false
+
+apisix:
+  enabled: false
+
+scorpio-broker-aaio:
+  enabled: false
+
+tm-forum-api:
+  enabled: false
+
+odrl-pap:
+  enabled: false
+
+vcwaltid:
+  enabled: false
+
+postgresql:
+  enabled: false
+
+# ---------------------------------------------------------------------------
+# MySQL — backend store for the Trusted Issuers List
+# ---------------------------------------------------------------------------
+mysql:
+  enabled: true
+  auth:
+    rootPassword: "trust-anchor-root-pass"
+    database: til
+    username: til
+    password: "til-pass"
+  primary:
+    persistence:
+      enabled: true
+      storageClass: local-path
+      size: 1Gi
+
+# ---------------------------------------------------------------------------
+# Trusted Issuers List (TIL) — the global trust registry
+# ---------------------------------------------------------------------------
+trusted-issuers-list:
+  enabled: true
+  ingress:
+    enabled: true
+    className: nginx
+    hosts:
+      - host: til.127.0.1.1.nip.io
+        paths:
+          - path: /
+            pathType: Prefix
+  database:
+    url: jdbc:mysql://trust-anchor-mysql:3306/til
+    username: til
+    password: "til-pass"
+
+# ---------------------------------------------------------------------------
+# Credential Config Service (CCS)
+# ---------------------------------------------------------------------------
+credentials-config-service:
+  enabled: true
+  ingress:
+    enabled: true
+    className: nginx
+    hosts:
+      - host: ccs.127.0.1.1.nip.io
+        paths:
+          - path: /
+            pathType: Prefix

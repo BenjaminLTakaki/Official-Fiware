@@ -1,0 +1,153 @@
+# =============================================================================
+# consumer.yaml — Helm values for the FIWARE Data Space Consumer
+# Chart: dsc/data-space-connector  Version: 7.17.0
+# Namespace: consumer
+#
+# The Consumer issues Verifiable Credentials to users via Keycloak (OID4VC).
+# It has NO data service, NO APISIX, NO Scorpio, NO OPA.
+# Components: Keycloak + PostgreSQL + VCVerifier + local TIL + local CCS
+#
+# IMPORTANT: Replace CONSUMER_DID below with the actual DID from 02-generate-identities.sh
+# =============================================================================
+
+# ---------------------------------------------------------------------------
+# Disable data-plane components (consumer does not serve data)
+# ---------------------------------------------------------------------------
+apisix:
+  enabled: false
+
+scorpio-broker-aaio:
+  enabled: false
+
+tm-forum-api:
+  enabled: false
+
+odrl-pap:
+  enabled: false
+
+# MySQL disabled (TIL uses PostgreSQL on provider; consumer TIL uses its own)
+mysql:
+  enabled: false
+
+# ---------------------------------------------------------------------------
+# PostgreSQL — backing store for Keycloak
+# ---------------------------------------------------------------------------
+postgresql:
+  enabled: true
+  auth:
+    username: keycloak
+    password: "keycloak-pass"
+    database: keycloak
+  primary:
+    persistence:
+      enabled: true
+      storageClass: local-path
+      size: 2Gi
+
+# ---------------------------------------------------------------------------
+# Keycloak — Verifiable Credential issuer (OID4VC)
+# ---------------------------------------------------------------------------
+keycloak:
+  enabled: true
+
+  image:
+    tag: "26.0.7"
+
+  auth:
+    adminUser: admin
+    adminPassword: "admin-pass"
+
+  postgresql:
+    enabled: false  # Use the external postgresql subchart above
+
+  externalDatabase:
+    host: consumer-postgresql
+    port: 5432
+    database: keycloak
+    user: keycloak
+    password: "keycloak-pass"
+
+  ingress:
+    enabled: true
+    ingressClassName: nginx
+    hostname: keycloak-consumer.127.0.1.1.nip.io
+    tls: false
+
+  extraEnvVars:
+    # Enable OID4VC (experimental in Keycloak 26)
+    - name: KC_FEATURES
+      value: "oid4vc-vci"
+    # Proxy mode required when behind nginx ingress
+    - name: KC_PROXY
+      value: "edge"
+    - name: KC_HOSTNAME
+      value: "keycloak-consumer.127.0.1.1.nip.io"
+    - name: KC_HOSTNAME_STRICT
+      value: "false"
+    - name: KC_HTTP_ENABLED
+      value: "true"
+    # Import the realm JSON on first startup
+    - name: KEYCLOAK_EXTRA_ARGS
+      value: "--import-realm"
+
+  extraVolumes:
+    - name: realm-config
+      configMap:
+        name: keycloak-realm
+
+  extraVolumeMounts:
+    - name: realm-config
+      mountPath: /opt/bitnami/keycloak/data/import
+
+# ---------------------------------------------------------------------------
+# VCVerifier (WaltID) — verifies Verifiable Presentations at the Consumer
+# ---------------------------------------------------------------------------
+vcwaltid:
+  enabled: true
+  ingress:
+    enabled: true
+    className: nginx
+    hosts:
+      - host: verifier-consumer.127.0.1.1.nip.io
+        paths:
+          - path: /
+            pathType: Prefix
+  # Connect to the global Trust Anchor TIL to validate issuers
+  app:
+    vcVerifier:
+      trustedIssuersLists:
+        - url: "http://til.127.0.1.1.nip.io/v4/issuers"
+
+# ---------------------------------------------------------------------------
+# Local Trusted Issuers List (consumer's own copy, backed by MySQL)
+# ---------------------------------------------------------------------------
+trusted-issuers-list:
+  enabled: true
+  ingress:
+    enabled: true
+    className: nginx
+    hosts:
+      - host: til-consumer.127.0.1.1.nip.io
+        paths:
+          - path: /
+            pathType: Prefix
+  # For consumer, we use an in-memory/H2 store (or you can add a mysql subchart)
+  database:
+    url: jdbc:h2:mem:til;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE
+    driver: org.h2.Driver
+    username: sa
+    password: ""
+
+# ---------------------------------------------------------------------------
+# Credential Config Service — tells the verifier which VC types are allowed
+# ---------------------------------------------------------------------------
+credentials-config-service:
+  enabled: true
+  ingress:
+    enabled: true
+    className: nginx
+    hosts:
+      - host: ccs-consumer.127.0.1.1.nip.io
+        paths:
+          - path: /
+            pathType: Prefix

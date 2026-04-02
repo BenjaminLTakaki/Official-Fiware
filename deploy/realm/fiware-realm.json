@@ -1,0 +1,85 @@
+{
+  "realm": "fiware-server",
+  "enabled": true,
+  "sslRequired": "none",
+  "roles": {
+    "realm": [
+      { "name": "READER",   "composite": false },
+      { "name": "OPERATOR", "composite": false }
+    ]
+  },
+  "clients": [
+    {
+      "clientId": "vc-issuer",
+      "enabled": true,
+      "protocol": "oid4vc",
+      "publicClient": true,
+      "standardFlowEnabled": false,
+      "directAccessGrantsEnabled": false,
+      "attributes": {
+        "vc.type.0": "VerifiableCredential,OperatorCredential",
+        "vc.supportedFormat.0": "jwt_vc",
+        "vc.scope.0": "OperatorCredential",
+        "pre-authorized_code_grant_enabled": "true",
+        "credential_offer_uri.code.lifespan": "30",
+        "vc.expiry.OperatorCredential": "31536000"
+      },
+      "protocolMappers": [
+        {
+          "name": "context-mapper",
+          "protocol": "oid4vc",
+          "protocolMapper": "oid4vc-context-mapper",
+          "consentRequired": false,
+          "config": {
+            "context": "https://www.w3.org/2018/credentials/v1,https://schema.org"
+          }
+        },
+        {
+          "name": "target-role-mapper",
+          "protocol": "oid4vc",
+          "protocolMapper": "oid4vc-target-role-mapper",
+          "consentRequired": false,
+          "config": {
+            "supportedCredentialTypes": "OperatorCredential"
+          }
+        },
+        {
+          "name": "email-mapper",
+          "protocol": "oid4vc",
+          "protocolMapper": "oid4vc-user-attribute-mapper",
+          "consentRequired": false,
+          "config": {
+            "userAttribute": "email",
+            "supportedCredentialTypes": "OperatorCredential"
+          }
+        }
+      ]
+    }
+  ],
+  "users": [
+    {
+      "username": "test-reader",
+      "enabled": true,
+      "firstName": "Test",
+      "lastName": "Reader",
+      "email": "test-reader@example.org",
+      "emailVerified": true,
+      "credentials": [
+        { "type": "password", "value": "test", "temporary": false }
+      ],
+      "realmRoles": ["READER"]
+    },
+    {
+      "username": "test-operator",
+      "enabled": true,
+      "firstName": "Test",
+      "lastName": "Operator",
+      "email": "test-operator@example.org",
+      "emailVerified": true,
+      "credentials": [
+        { "type": "password", "value": "test", "temporary": false }
+      ],
+      "realmRoles": ["OPERATOR"]
+    }
+  ]
+}
